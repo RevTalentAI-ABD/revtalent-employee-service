@@ -6,12 +6,14 @@ import com.revtalent.employee_service.repository.EmployeeRepository;
 import com.revtalent.employee_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class HierarchyService {
 
     private final UserRepository usersRepository;

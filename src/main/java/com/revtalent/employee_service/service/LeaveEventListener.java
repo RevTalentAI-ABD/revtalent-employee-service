@@ -19,8 +19,8 @@ public class LeaveEventListener {
         Long employeeId = Long.valueOf(event.get("employeeId").toString());
         String employeeName = (String) event.get("employeeName");
         String leaveType = (String) event.get("leaveType");
-        String startDate = (String) event.get("startDate");
-        String endDate = (String) event.get("endDate");
+        String startDate = String.valueOf(event.get("startDate"));
+        String endDate = String.valueOf(event.get("endDate"));
 
         log.info("Employee {} ({}) applied for {} leave from {} to {}",
                 employeeName, employeeId, leaveType, startDate, endDate);

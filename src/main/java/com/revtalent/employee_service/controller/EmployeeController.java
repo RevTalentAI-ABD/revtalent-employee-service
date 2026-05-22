@@ -98,6 +98,11 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getByUsername(username));
     }
 
+    @GetMapping("/employees/username/{username}")
+    public ResponseEntity<com.revtalent.employee_service.dto.EmployeeResponse> getEmployeeByUsername(@PathVariable String username) {
+        return ResponseEntity.ok(employeeService.getByUsername(username));
+    }
+
     @PostMapping("/employees")
     public ResponseEntity<?> create(@RequestBody CreateEmployeeRequest request) {
         return ResponseEntity.ok(employeeService.createEmployee(request));

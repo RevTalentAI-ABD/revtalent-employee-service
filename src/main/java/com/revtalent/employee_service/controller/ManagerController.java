@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
 @RequestMapping("/api/manager")
-@CrossOrigin("*")
+
 public class ManagerController {
 
     @Autowired private DashboardService dashboardService;

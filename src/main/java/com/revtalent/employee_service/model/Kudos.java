@@ -27,9 +27,19 @@ public class Kudos {
     @Column(nullable = false, length = 500)
     private String message;
 
-    @Column(nullable = false)
-    private String badgeType; // e.g., TEAMWORK, EXCELLENCE, LEADERSHIP
+    @Column(name = "badge_type", nullable = false)
+    private String category;
+
+    private String senderName;
+    private String receiverName;
+    private String receiverInitials;
+
+    private int likesCount = 0;
+    
+    @Transient
+    private boolean hasLiked = false;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
 }

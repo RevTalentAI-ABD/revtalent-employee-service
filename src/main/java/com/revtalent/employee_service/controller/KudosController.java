@@ -12,14 +12,20 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/kudos")
 @RequiredArgsConstructor
-@CrossOrigin("*")
+
 public class KudosController {
 
     private final KudosService kudosService;
+    private final com.revtalent.employee_service.util.JwtUtil jwtUtil;
 
     @PostMapping
-    public ResponseEntity<Kudos> giveKudos(@RequestBody KudosRequest request) {
-        return ResponseEntity.ok(kudosService.giveKudos(request));
+    public ResponseEntity<Kudos> giveKudos(@RequestBody KudosRequest request, jakarta.servlet.http.HttpServletRequest httpRequest) {
+        String authHeader = httpRequest.getHeader("Authorization");
+        String username = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            username = jwtUtil.extractUsername(authHeader.replace("Bearer ", ""));
+        }
+        return ResponseEntity.ok(kudosService.giveKudos(request, username));
     }
 
     @GetMapping("/employee/{employeeId}")
@@ -30,5 +36,10 @@ public class KudosController {
     @GetMapping("/recent")
     public ResponseEntity<List<Kudos>> getRecentKudos() {
         return ResponseEntity.ok(kudosService.getRecentKudos());
+    }
+
+    @PutMapping("/{id}/like")
+    public ResponseEntity<Kudos> likeKudos(@PathVariable Long id) {
+        return ResponseEntity.ok(kudosService.likeKudos(id));
     }
 }

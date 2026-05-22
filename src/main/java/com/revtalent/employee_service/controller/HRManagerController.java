@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/hr")
-@CrossOrigin("*")
+
 public class HRManagerController {
 
     @Autowired

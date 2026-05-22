@@ -10,7 +10,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/hierarchy")
 @RequiredArgsConstructor
-@CrossOrigin("*")
+
 public class HierarchyController {
 
     private final HierarchyService hierarchyService;

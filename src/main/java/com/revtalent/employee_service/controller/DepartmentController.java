@@ -13,6 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/departments")
 @RequiredArgsConstructor
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('HR_ADMIN') or hasRole('EMPLOYEE') or hasRole('MANAGER')")
 
 public class DepartmentController {
 
@@ -21,6 +22,7 @@ public class DepartmentController {
 
     // CREATE DEPARTMENT
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('HR_ADMIN')")
     public Department createDepartment(
             @RequestBody DepartmentDTO dto
     ) {
@@ -68,6 +70,7 @@ public class DepartmentController {
 
     // UPDATE DEPARTMENT HEAD
     @PutMapping("/{departmentId}/head/{employeeId}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('HR_ADMIN')")
     public Department assignDepartmentHead(
             @PathVariable Long departmentId,
             @PathVariable Long employeeId

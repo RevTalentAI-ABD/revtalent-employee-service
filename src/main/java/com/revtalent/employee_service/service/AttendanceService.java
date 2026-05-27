@@ -38,6 +38,16 @@ public class AttendanceService {
         res.setEmployeeId(a.getEmployee() != null ? a.getEmployee().getId() : null);
         res.setEmployeeName(a.getEmployee() != null && a.getEmployee().getUser() != null
                 ? a.getEmployee().getUser().getName() : "N/A");
+        
+        String role = "N/A";
+        if (a.getEmployee() != null && a.getEmployee().getUser() != null && a.getEmployee().getUser().getRole() != null) {
+            role = String.valueOf(a.getEmployee().getUser().getRole());
+            if (role.startsWith("ROLE_")) {
+                role = role.substring(5);
+            }
+        }
+        res.setEmployeeRole(role);
+        
         res.setEmployeeCode(a.getEmployee() != null ? a.getEmployee().getEmployeeCode() : null);
         res.setDepartment(a.getEmployee() != null && a.getEmployee().getDepartment() != null
                 ? a.getEmployee().getDepartment().getName() : "N/A");
@@ -91,14 +101,16 @@ public class AttendanceService {
         Employee emp = employeeRepository.findById(empId)
                 .orElseThrow(() -> new RuntimeException("Employee not found: " + empId));
 
+        Attendance.AttendanceType type = dto.getAttendanceType() != null
+                ? dto.getAttendanceType()
+                : Attendance.AttendanceType.WFO;
+
         Attendance attendance = Attendance.builder()
                 .employee(emp)
                 .workDate(LocalDate.now())
                 .checkIn(LocalDateTime.now())
-                .attendanceType(dto.getAttendanceType() != null
-                        ? dto.getAttendanceType()
-                        : Attendance.AttendanceType.WFO)
-                .status(Attendance.Status.PRESENT)
+                .attendanceType(type)
+                .status(type == Attendance.AttendanceType.WFH ? Attendance.Status.WFH : Attendance.Status.PRESENT)
                 .notes(dto.getNotes())
                 .build();
 
@@ -138,12 +150,14 @@ public class AttendanceService {
         attendance.setWorkDate(dto.getWorkDate());
         attendance.setCheckIn(dto.getCheckIn());
         attendance.setCheckOut(dto.getCheckOut());
-        attendance.setAttendanceType(dto.getAttendanceType() != null
+        Attendance.AttendanceType type = dto.getAttendanceType() != null
                 ? dto.getAttendanceType()
-                : Attendance.AttendanceType.WFO);
+                : Attendance.AttendanceType.WFO;
+
+        attendance.setAttendanceType(type);
         attendance.setStatus(dto.getStatus() != null
                 ? dto.getStatus()
-                : Attendance.Status.PRESENT);
+                : (type == Attendance.AttendanceType.WFH ? Attendance.Status.WFH : Attendance.Status.PRESENT));
         attendance.setNotes(dto.getNotes());
 
         return AttendanceResponseDTO.from(attendanceRepository.save(attendance));
@@ -151,6 +165,14 @@ public class AttendanceService {
 
     public AttendanceResponseDTO regularize(Long attendanceId, AttendanceDTO dto) {
         Attendance attendance = fetchAttendanceEntity(attendanceId);
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isHr = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_HR_ADMIN"));
+        if (!isHr) {
+             Employee loggedInEmp = employeeRepository.findByUser_Username(auth.getName()).orElseThrow(() -> new RuntimeException("Employee not found"));
+             if (!attendance.getEmployee().getId().equals(loggedInEmp.getId())) {
+                  throw new org.springframework.security.access.AccessDeniedException("Cannot regularize another employee's attendance");
+             }
+        }
         attendance.setCheckIn(dto.getCheckIn());
         attendance.setCheckOut(dto.getCheckOut());
         attendance.setNotes(dto.getNotes());
@@ -182,6 +204,18 @@ public class AttendanceService {
     public List<AttendanceResponse> getAll() {
         return attendanceRepository.findAll().stream()
                 .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<AttendanceResponse> getOwnAttendance(String username) {
+        Employee emp = employeeRepository.findByUser_Username(username)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        return attendanceRepository.findByEmployee_IdOrderByWorkDateDesc(emp.getId())
+                .stream()
+                .map(a -> {
+                    AttendanceResponse res = toDTO(a);
+                    return res;
+                })
                 .collect(Collectors.toList());
     }
 

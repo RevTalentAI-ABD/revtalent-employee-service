@@ -12,6 +12,7 @@ import com.revtalent.employee_service.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,13 +30,21 @@ public class EmployeeController {
 
     // ── Employee CRUD (HRModule) ───────────────────────────────────────────────
 
+    @PreAuthorize("hasRole('HR_ADMIN')")
     @GetMapping("/employees")
     public ResponseEntity<?> getAll() {
         return ResponseEntity.ok(employeeService.getAll());
     }
 
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/employees/directory")
+    public ResponseEntity<?> getDirectory() {
+        return ResponseEntity.ok(employeeService.getAll());
+    }
 
 
+
+    @PreAuthorize("hasRole('HR_ADMIN')")
     @DeleteMapping("/employees/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         employeeService.delete(id);
@@ -44,11 +53,13 @@ public class EmployeeController {
 
     // ── Employee detail endpoints (HEAD) ──────────────────────────────────────
 
+    @PreAuthorize("hasRole('HR_ADMIN') or @employeeService.getByUsername(authentication.name).id == #id")
     @GetMapping("/employees/{id}")
     public ResponseEntity<com.revtalent.employee_service.dto.EmployeeResponse> getEmployee(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
 
+    @PreAuthorize("hasRole('HR_ADMIN') or @employeeService.getByUsername(authentication.name).id == #id")
     @PutMapping("/employees/{id}")
     public ResponseEntity<com.revtalent.employee_service.dto.EmployeeResponse> updateEmployee(
             @PathVariable Long id,
@@ -56,6 +67,7 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.updateEmployee(id, request));
     }
 
+    @PreAuthorize("hasRole('HR_ADMIN') or @employeeService.getByUsername(authentication.name).id == #id")
     @PatchMapping("/employees/{id}")
     public ResponseEntity<?> update(
             @PathVariable Long id,
@@ -63,6 +75,7 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.update(id, req));
     }
 
+    @PreAuthorize("hasRole('HR_ADMIN') or @employeeService.getByUsername(authentication.name).id == #id")
     @PatchMapping("/employees/{id}/personal-info")
     public ResponseEntity<com.revtalent.employee_service.dto.EmployeeResponse> patchPersonalInfo(
             @PathVariable Long id,
@@ -70,11 +83,13 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.patchPersonalInfo(id, request));
     }
 
+    @PreAuthorize("hasRole('HR_ADMIN') or @employeeService.getByUsername(authentication.name).id == #id")
     @GetMapping("/employees/{id}/dashboard-stats")
     public ResponseEntity<com.revtalent.employee_service.dto.EmployeeResponse> getDashboardStats(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
 
+    @PreAuthorize("hasRole('HR_ADMIN') or @employeeService.getByUsername(authentication.name).id == #id")
     @GetMapping("/employees/{id}/schedule")
     public ResponseEntity<com.revtalent.employee_service.dto.EmployeeResponse> getSchedule(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
@@ -98,11 +113,13 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getByUsername(username));
     }
 
+    @PreAuthorize("hasRole('HR_ADMIN') or authentication.name == #username")
     @GetMapping("/employees/username/{username}")
     public ResponseEntity<com.revtalent.employee_service.dto.EmployeeResponse> getEmployeeByUsername(@PathVariable String username) {
         return ResponseEntity.ok(employeeService.getByUsername(username));
     }
 
+    @PreAuthorize("hasRole('HR_ADMIN')")
     @PostMapping("/employees")
     public ResponseEntity<?> create(@RequestBody CreateEmployeeRequest request) {
         return ResponseEntity.ok(employeeService.createEmployee(request));

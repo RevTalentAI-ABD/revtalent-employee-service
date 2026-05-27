@@ -16,6 +16,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/manager")
 @RequiredArgsConstructor
+@org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('MANAGER', 'HR_ADMIN')")
 
 public class DashboardController {
 

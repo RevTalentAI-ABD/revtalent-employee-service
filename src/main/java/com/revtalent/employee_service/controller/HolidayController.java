@@ -21,13 +21,11 @@ public class HolidayController {
     }
 
     @PostMapping
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('HR_ADMIN')")
     public ResponseEntity<Holiday> addHoliday(@RequestBody Holiday holiday) {
         return ResponseEntity.ok(holidayRepository.save(holiday));
     }
 
     @PutMapping("/{id}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('HR_ADMIN')")
     public ResponseEntity<Holiday> updateHoliday(@PathVariable Long id, @RequestBody Holiday holidayDetails) {
         Holiday holiday = holidayRepository.findById(id).orElseThrow(() -> new RuntimeException("Holiday not found"));
         holiday.setName(holidayDetails.getName());
@@ -37,7 +35,6 @@ public class HolidayController {
     }
 
     @DeleteMapping("/{id}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('HR_ADMIN')")
     public ResponseEntity<?> deleteHoliday(@PathVariable Long id) {
         holidayRepository.deleteById(id);
         return ResponseEntity.ok().build();

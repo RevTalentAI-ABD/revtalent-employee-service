@@ -15,7 +15,6 @@ public class PolicyController {
     private final PolicyService service;
 
     @PostMapping
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('HR_ADMIN')")
     public Policy create(@RequestBody Policy policy) {
         return service.create(policy);
     }

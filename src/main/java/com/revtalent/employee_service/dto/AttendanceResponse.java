@@ -9,7 +9,6 @@ public class AttendanceResponse {
     private Long id;
     private Long employeeId;
     private String employeeName;
-    private String employeeRole;
     private String department;
     private String employeeCode;
     private LocalDate workDate;

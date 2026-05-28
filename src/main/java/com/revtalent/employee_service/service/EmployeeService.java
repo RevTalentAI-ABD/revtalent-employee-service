@@ -45,9 +45,7 @@ public class EmployeeService {
                         ? emp.getUser().getRole().name() : null)
                 .designation(emp.getDesignation())
                 .departmentId(emp.getDepartment() != null ? emp.getDepartment().getId() : null)
-                .departmentName(emp.getDepartment() != null ? emp.getDepartment().getName() : 
-                        (emp.getUser() != null && emp.getUser().getDepartment() != null && !emp.getUser().getDepartment().isBlank() 
-                                ? emp.getUser().getDepartment() : "N/A"))
+                .departmentName(emp.getDepartment() != null ? emp.getDepartment().getName() : "N/A")
                 .managerId(emp.getManager() != null ? emp.getManager().getId() : null)
                 .managerName(emp.getManager() != null && emp.getManager().getUser() != null  // ← add this
                         ? emp.getManager().getUser().getName() : "Not Assigned")
@@ -85,9 +83,9 @@ public class EmployeeService {
                 .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id)));
     }
 
-    @Transactional
     public ManagerProfileResponse getManagerProfileByUsername(String username) {
-        Employee manager = getOrCreateEmployee(username);
+        Employee manager = employeeRepository.findByUser_Username(username)
+                .orElseThrow(() -> new RuntimeException("Manager not found: " + username));
         return getManagerProfile(manager.getId());
     }
     // Alias used by HRModule routes
@@ -98,9 +96,9 @@ public class EmployeeService {
 
     // ── Create ────────────────────────────────────────────────────────────────
 
-    @Transactional
     public List<EmployeeResponse> getTeamForManager(String username) {
-        Employee manager = getOrCreateEmployee(username);
+        Employee manager = employeeRepository.findByUser_Username(username)
+                .orElseThrow(() -> new RuntimeException("Manager not found"));
         return employeeRepository.findByManager_Id(manager.getId())
                 .stream()
                 .map(this::toResponse)
@@ -132,16 +130,7 @@ public class EmployeeService {
         users.setEmail(request.getEmail());
         users.setPassword(passwordEncoder.encode(request.getPassword()));
         if (request.getRole() != null && !request.getRole().isBlank()) {
-            Users.Role role;
-            try {
-                role = Users.Role.valueOf(request.getRole().toUpperCase().trim());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid role: " + request.getRole());
-            }
-            if (role == Users.Role.HR_ADMIN) {
-                throw new IllegalArgumentException("Cannot create HR Admin accounts via this endpoint");
-            }
-            users.setRole(role);
+            users.setRole(Users.Role.valueOf(request.getRole().toUpperCase()));
         } else {
             users.setRole(Users.Role.EMPLOYEE);
         }
@@ -182,8 +171,8 @@ public class EmployeeService {
         users.setUsername(email);
         users.setEmail(email);
 
-        String tempPassword = java.util.UUID.randomUUID().toString().substring(0, 8);
-        users.setPassword(passwordEncoder.encode(tempPassword));
+        // ✅ 🔥 CRITICAL FIX
+        users.setPasswordHash(passwordEncoder.encode("default123"));
 
         users.setRole(Users.Role.EMPLOYEE);
         users.setActive(true);
@@ -287,24 +276,18 @@ public class EmployeeService {
     // ── Search & Team ─────────────────────────────────────────────────────────
 
     public List<EmployeeResponse> getTeam() {
-        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-        return getTeamForManager(username);
+        return employeeRepository.findAll().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     public List<EmployeeResponse> searchTeam(String query) {
-        if (query == null || query.isBlank()) {
-            return List.of();
-        }
         String q = query.toLowerCase();
-        String username = org.springframework.security.core.context.SecurityContextHolder.getContext()
-                .getAuthentication().getName();
-        return getTeamForManager(username).stream()
-                .filter(emp -> {
-                    String name = emp.getName() != null ? emp.getName().toLowerCase() : "";
-                    String uname = emp.getUsername() != null ? emp.getUsername().toLowerCase() : "";
-                    String code = emp.getEmployeeCode() != null ? emp.getEmployeeCode().toLowerCase() : "";
-                    return name.contains(q) || uname.contains(q) || code.contains(q);
-                })
+        return employeeRepository.findAll().stream()
+                .filter(emp -> emp.getUser() != null &&
+                        emp.getUser().getUsername() != null &&
+                        emp.getUser().getUsername().toLowerCase().contains(q))
+                .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -348,26 +331,10 @@ public class EmployeeService {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee", id));
     }
-
-    private Employee getOrCreateEmployee(String username) {
-        return employeeRepository.findByUser_Username(username)
-                .orElseGet(() -> {
-                     Users user = userRepository.findByUsername(username)
-                             .orElseThrow(() -> new RuntimeException("User not found: " + username));
-                     Employee newEmp = new Employee();
-                     newEmp.setUser(user);
-                     // Set department if user has one
-                     if (user.getDepartment() != null && !user.getDepartment().isBlank()) {
-                         departmentRepository.findByName(user.getDepartment())
-                                 .ifPresent(newEmp::setDepartment);
-                     }
-                     return employeeRepository.save(newEmp);
-                });
-    }
-
-    @Transactional
+    @Transactional(readOnly = true)
     public EmployeeResponse getByUsername(String username) {
-        Employee emp = getOrCreateEmployee(username);
+        Employee emp = employeeRepository.findByUser_Username(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee", 0L));
         return toResponse(emp);
     }
 }

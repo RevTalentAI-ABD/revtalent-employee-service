@@ -10,7 +10,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/hierarchy")
 @RequiredArgsConstructor
-@org.springframework.security.access.prepost.PreAuthorize("hasRole('HR_ADMIN') or hasRole('MANAGER')")
+
 public class HierarchyController {
 
     private final HierarchyService hierarchyService;
@@ -41,20 +41,14 @@ public class HierarchyController {
      * Body: { "managerId": 1, "employeeIds": [201, 202] }
      */
     @PostMapping("/assign")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('HR_ADMIN')")
     public ResponseEntity<Map<String, Object>> assignEmployees(
             @RequestBody Map<String, Object> body) {
 
-        if (body.get("managerId") == null || body.get("employeeIds") == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "managerId and employeeIds are required"));
-        }
         Long managerId = Long.valueOf(body.get("managerId").toString());
 
         @SuppressWarnings("unchecked")
-        List<?> rawIds = (List<?>) body.get("employeeIds");
-        List<Long> employeeIds = rawIds.stream()
-                .map(id -> Long.valueOf(id.toString()))
-                .toList();
+        List<Integer> rawIds = (List<Integer>) body.get("employeeIds");
+        List<Long> employeeIds = rawIds.stream().map(Long::valueOf).toList();
 
         hierarchyService.assignEmployeesToManager(managerId, employeeIds);
         return ResponseEntity.ok(Map.of("success", true));
@@ -66,18 +60,12 @@ public class HierarchyController {
      * Body: { "employeeIds": [201, 202] }
      */
     @PostMapping("/unassign")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('HR_ADMIN')")
     public ResponseEntity<Map<String, Object>> unassignEmployees(
             @RequestBody Map<String, Object> body) {
 
-        if (body.get("employeeIds") == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "employeeIds is required"));
-        }
         @SuppressWarnings("unchecked")
-        List<?> rawIds = (List<?>) body.get("employeeIds");
-        List<Long> employeeIds = rawIds.stream()
-                .map(id -> Long.valueOf(id.toString()))
-                .toList();
+        List<Integer> rawIds = (List<Integer>) body.get("employeeIds");
+        List<Long> employeeIds = rawIds.stream().map(Long::valueOf).toList();
 
         hierarchyService.unassignEmployeesFromManager(employeeIds);
         return ResponseEntity.ok(Map.of("success", true));

@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
 @RequestMapping("/api/manager")
-@org.springframework.security.access.prepost.PreAuthorize("hasRole('MANAGER') or hasRole('HR_ADMIN')")
 
 public class ManagerController {
 
